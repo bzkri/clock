@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ساعة وتاريخ</title>
+  <style>
+    body {
+      background-color: #1e1e2f;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    body.light-theme {
+      background-color: #f5f5f7;
+      color: #1c1c1e;
+    }
+
+    .button-panel {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+    }
+
+    .button-panel button {
+      padding: 10px;
+      font-size: 18px;
+      background-color: rgba(0,0,0,0.2);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .light-theme .button-panel button {
+      background-color: rgba(0,0,0,0.05);
+      color: #1c1c1e;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 60vh;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .panel-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .clock {
+      font-size: 12em;
+      font-weight: 300;
+      letter-spacing: -2px;
+      margin-top: 0.5em;
+      margin-bottom: 10px;
+    }
+
+    .light-theme .clock {
+      color: #1c1c1e;
+    }
+
+    #info {
+      font-size: 1.3em;
+      margin-top: 0.5em;
+      transition: margin-top 0.3s ease;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .light-theme #info {
+      color: rgba(0,0,0,0.6);
+    }
+
+    .settings-panel, .calendar-popup {
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      background-color: rgba(44, 44, 63, 0.9);
+      padding: 0;
+      border-radius: 14px;
+      display: none;
+      z-index: 10;
+      width: 340px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      direction: rtl;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      overflow: hidden;
+    }
+
+    .light-theme .settings-panel,
+    .light-theme .calendar-popup {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #1c1c1e;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .settings-group {
+      margin: 0;
+      padding: 15px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .light-theme .settings-group {
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .settings-group h3 {
+      margin: 0 0 15px 0;
+      color: #4a90e2;
+      font-size: 1em;
+      font-weight: 500;
+    }
+
+    .settings-label {
+      display: block;
+      margin-bottom: 8px;
+      color: rgba(255,255,255,0.9);
+      font-size: 0.9em;
+    }
+
+    .light-theme .settings-label {
+      color: rgba(0,0,0,0.8);
+    }
+
+    .settings-control {
+      width: 100%;
+      padding: 12px;
+      margin: 0 0 15px 0;
+      border-radius: 8px;
+      border: none;
+      background-color: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 1em;
+    }
+
+    .light-theme .settings-control {
+      background-color: rgba(0,0,0,0.05);
+      color: #1c1c1e;
+    }
+
+    select.settings-control {
+      cursor: pointer;
+    }
+
+    select.settings-control option {
+      background-color: #2c2c3f;
+      color: white;
+    }
+
+    .light-theme select.settings-control option {
+      background-color: #f5f5f7;
+      color: #1c1c1e;
+    }
+
+    input[type="range"].settings-control {
+      -webkit-appearance: none;
+      height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      padding: 0;
+      margin-bottom: 20px;
+    }
+
+    .light-theme input[type="range"].settings-control {
+      background: rgba(0,0,0,0.1);
+    }
+
+    input[type="range"].settings-control::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #4a90e2;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    /* أنماط التقويم */
+    .calendar-header {
+      padding: 20px 15px 10px;
+      background: transparent;
+      color: white;
+      text-align: center;
+      font-weight: 500;
+      font-size: 1.1em;
+    }
+
+    .light-theme .calendar-header {
+      color: #1c1c1e;
+    }
+
+    .calendar-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .calendar-nav button {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1em;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .light-theme .calendar-nav button {
+      background: rgba(0,0,0,0.05);
+      color: #1c1c1e;
+    }
+
+    .calendar-nav button:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .light-theme .calendar-nav button:hover {
+      background: rgba(0,0,0,0.1);
+    }
+
+    .calendar-tabs {
+      display: flex;
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      margin: 10px 15px;
+      padding: 3px;
+    }
+
+    .light-theme .calendar-tabs {
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    .calendar-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s;
+      font-size: 0.9em;
+    }
+
+    .calendar-tab.active {
+      background-color: rgba(255,255,255,0.2);
+      font-weight: 500;
+    }
+
+    .light-theme .calendar-tab.active {
+      background-color: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .calendar-container {
+      padding: 0 15px 15px;
+    }
+
+    .calendar-popup table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 5px;
+    }
+
+    .calendar-popup th {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.85em;
+      font-weight: 400;
+      padding: 8px 0;
+      text-align: center;
+    }
+
+    .light-theme .calendar-popup th {
+      color: rgba(0,0,0,0.5);
+    }
+
+    .calendar-popup td {
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 50%;
+      transition: all 0.2s;
+      position: relative;
+      font-weight: 400;
+      font-size: 0.95em;
+    }
+
+    .calendar-popup td:not(.empty):hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .light-theme .calendar-popup td:not(.empty):hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    .calendar-popup td.selected {
+      background-color: #4a90e2;
+      color: white;
+      font-weight: 500;
+    }
+
+    .today {
+      color: #4a90e2;
+      font-weight: 500;
+    }
+
+    .today::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      background-color: #4a90e2;
+      border-radius: 50%;
+    }
+
+    .selected.today::after {
+      background-color: white;
+    }
+
+    .other-month {
+      color: rgba(255,255,255,0.3);
+    }
+
+    .light-theme .other-month {
+      color: rgba(0,0,0,0.2);
+    }
+
+    .empty {
+      background: transparent !important;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <div class="button-panel">
+    <button onclick="toggleCalendar()">📅</button>
+    <button onclick="toggleSettings()">⚙️</button>
+    <button class="fullscreen-btn" onclick="toggleFullscreen();">⛶</button>
+  </div>
+
+  <div class="panel" id="mainPanel">
+    <div class="panel-content">
+      <div class="clock" id="clock"></div>
+      <div id="info"></div>
+    </div>
+  </div>
+
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-group">
+      <h3>إعدادات العرض</h3>
+      <label class="settings-label">حجم المحتوى</label>
+      <input type="range" min="50" max="200" value="100" id="scaleRange" class="settings-control">
+      
+      <label class="settings-label">نوع الخط</label>
+      <select id="fontSelect" class="settings-control">
+        <option value="Arial">Arial</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Tahoma">Tahoma</option>
+      </select>
+    </div>
+
+    <div class="settings-divider"></div>
+
+    <div class="settings-group">
+      <h3>إعدادات الخلفية</h3>
+      <label class="settings-label">نمط الخلفية</label>
+      <select id="backgroundSelect" class="settings-control">
+        <option value="dark">غامقة</option>
+        <option value="light">فاتحة</option>
+        <option value="custom">مخصصة</option>
+        <option value="image">صورة</option>
+      </select>
+      
+      <div id="customBackgroundContainer" style="display:none;">
+        <label class="settings-label">اختر لونًا</label>
+        <input type="color" id="customBackground" class="settings-control">
+      </div>
+      
+      <div id="backgroundImageContainer" style="display:none;">
+        <label class="settings-label">اختر صورة</label>
+        <input type="file" id="backgroundImage" accept="image/*" class="settings-control">
+      </div>
+    </div>
+
+    <div class="settings-divider"></div>
+
+    <div class="settings-group">
+      <h3>إعدادات الوقت</h3>
+      <label class="settings-label">نظام الساعة</label>
+      <select id="timeFormat" class="settings-control">
+        <option value="24">24 ساعة</option>
+        <option value="12">12 ساعة</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="calendar-popup" id="calendarPopup">
+    <div class="calendar-header">
+      <div id="calendarTitle">التقويم</div>
+      <div class="calendar-nav">
+        <button onclick="prevMonth(event)">❮</button>
+        <button onclick="nextMonth(event)">❯</button>
+      </div>
+    </div>
+    
+    <div class="calendar-tabs">
+      <div class="calendar-tab active" onclick="switchCalendar('gregorian')">الميلادي</div>
+      <div class="calendar-tab" onclick="switchCalendar('hijri')">الهجري</div>
+    </div>
+    
+    <div id="gregorianCalendar" class="calendar-container"></div>
+    <div id="hijriCalendar" class="calendar-container" style="display:none;"></div>
+  </div>
+
+  <script>
+    const clock = document.getElementById("clock");
+    const info = document.getElementById("info");
+    const settingsPanel = document.getElementById("settingsPanel");
+    const scaleRange = document.getElementById("scaleRange");
+    const calendarPopup = document.getElementById("calendarPopup");
+    const backgroundSelect = document.getElementById("backgroundSelect");
+    const customBackground = document.getElementById("customBackground");
+    const backgroundImage = document.getElementById("backgroundImage");
+    const fontSelect = document.getElementById("fontSelect");
+    const timeFormat = document.getElementById("timeFormat");
+    const customBgContainer = document.getElementById("customBackgroundContainer");
+    const bgImageContainer = document.getElementById("backgroundImageContainer");
+    const gregorianCalendar = document.getElementById("gregorianCalendar");
+    const hijriCalendar = document.getElementById("hijriCalendar");
+    const calendarTitle = document.getElementById("calendarTitle");
+
+    let currentCalendarType = 'gregorian';
+    let currentGregorianDate = new Date();
+    let currentHijriDate = new Date();
+    
+    const hijriMonths = [
+      "محرم", "صفر", "ربيع الأول", "ربيع الثاني", 
+      "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", 
+      "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
+    ];
+    
+    const daysOfWeek = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+
+    // دالة لحفظ الإعدادات
+    function saveSettings() {
+      const settings = {
+        scale: scaleRange.value,
+        font: fontSelect.value,
+        background: backgroundSelect.value,
+        customBgColor: customBackground.value,
+        timeFormat: timeFormat.value,
+        theme: document.body.classList.contains('light-theme') ? 'light' : 'dark'
+      };
+      localStorage.setItem('clockSettings', JSON.stringify(settings));
+    }
+
+    // دالة لتحميل الإعدادات
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('clockSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        
+        // تطبيق الإعدادات
+        scaleRange.value = settings.scale;
+        document.getElementById('mainPanel').style.transform = `scale(${settings.scale / 100})`;
+        info.style.marginTop = `${(settings.scale - 100) * 0.4}px`;
+        
+        fontSelect.value = settings.font;
+        document.body.style.fontFamily = settings.font;
+        
+        backgroundSelect.value = settings.background;
+        timeFormat.value = settings.timeFormat;
+        
+        if (settings.background === 'dark') {
+          document.body.classList.remove('light-theme');
+          document.body.style.background = '#1e1e2f';
+        } else if (settings.background === 'light') {
+          document.body.classList.add('light-theme');
+          document.body.style.background = '#f0f0f0';
+        } else if (settings.background === 'custom') {
+          customBackground.value = settings.customBgColor;
+          document.body.style.background = settings.customBgColor;
+          customBgContainer.style.display = 'block';
+        }
+        
+        if (settings.theme === 'light') {
+          document.body.classList.add('light-theme');
+        } else {
+          document.body.classList.remove('light-theme');
+        }
+      }
+    }
+
+    function toLatinNumbers(str) {
+      return str.replace(/[٠-٩]/g, c => c.charCodeAt(0) - 0x0660)
+                .replace(/[۰-۹]/g, c => c.charCodeAt(0) - 0x06F0);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes().toString().padStart(2, '0');
+      let seconds = now.getSeconds().toString().padStart(2, '0');
+      let ampm = '';
+
+      if (timeFormat.value === '12') {
+        ampm = hours >= 12 ? ' مساءً' : ' صباحاً';
+        hours = hours % 12 || 12;
+      }
+
+      const time = toLatinNumbers(`${hours}:${minutes}:${seconds}${ampm}`);
+      const date = toLatinNumbers(now.toLocaleDateString("ar-EG", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+      const hijri = toLatinNumbers(new Intl.DateTimeFormat('ar-TN-u-ca-islamic', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      }).format(now));
+
+      clock.textContent = time;
+      info.textContent = `📅 ${date} • 🕌 ${hijri}`;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function toggleSettings() {
+      const visible = settingsPanel.style.display === 'block';
+      settingsPanel.style.display = visible ? 'none' : 'block';
+      calendarPopup.style.display = 'none';
+    }
+
+    function toggleCalendar() {
+      const visible = calendarPopup.style.display === 'block';
+      calendarPopup.style.display = visible ? 'none' : 'block';
+      settingsPanel.style.display = 'none';
+      if (!visible) {
+        renderGregorianCalendar(currentGregorianDate);
+        renderHijriCalendar(currentHijriDate);
+      }
+    }
+
+    function switchCalendar(type) {
+      currentCalendarType = type;
+      
+      document.querySelectorAll('.calendar-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelector(`.calendar-tab[onclick="switchCalendar('${type}')"]`).classList.add('active');
+      
+      if (type === 'gregorian') {
+        gregorianCalendar.style.display = 'block';
+        hijriCalendar.style.display = 'none';
+        renderGregorianCalendar(currentGregorianDate);
+      } else {
+        gregorianCalendar.style.display = 'none';
+        hijriCalendar.style.display = 'block';
+        renderHijriCalendar(currentHijriDate);
+      }
+    }
+
+    function renderGregorianCalendar(date) {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+
+      calendarTitle.textContent = `${monthNames[month]} ${toLatinNumbers(year.toString())}`;
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDay = firstDay.getDay();
+      const totalDays = lastDay.getDate();
+
+      let html = `<table><thead><tr>`;
+      daysOfWeek.forEach(day => html += `<th>${day}</th>`);
+      html += `</tr></thead><tbody><tr>`;
+
+      for (let i = 0; i < startDay; i++) {
+        html += `<td class="empty other-month"></td>`;
+      }
+
+      const today = new Date();
+      for (let day = 1; day <= totalDays; day++) {
+        const thisDate = new Date(year, month, day);
+        const isToday = thisDate.toDateString() === today.toDateString();
+        html += `<td class="${isToday ? 'today' : ''}" onclick="selectGregorianDate(${year}, ${month}, ${day})">${toLatinNumbers(day.toString())}</td>`;
+        if ((startDay + day) % 7 === 0) html += `</tr><tr>`;
+      }
+
+      const remainingCells = (7 - ((startDay + totalDays) % 7)) % 7;
+      for (let i = 0; i < remainingCells; i++) {
+        html += `<td class="empty other-month"></td>`;
+      }
+
+      html += `</tr></tbody></table>`;
+      gregorianCalendar.innerHTML = html;
+    }
+
+    function renderHijriCalendar(date) {
+      const hijriDate = gregorianToHijri(date);
+      const hYear = hijriDate.year;
+      const hMonth = hijriDate.month;
+      
+      calendarTitle.textContent = `${hijriMonths[hMonth]} ${toLatinNumbers(hYear.toString())}`;
+
+      const firstGregorianDate = hijriToGregorian(hYear, hMonth, 1);
+      const startDay = firstGregorianDate.getDay();
+      
+      let totalDays = (hMonth % 2 === 0) ? 30 : 29;
+      if (hMonth === 11) totalDays = 29;
+
+      let html = `<table><thead><tr>`;
+      daysOfWeek.forEach(day => html += `<th>${day}</th>`);
+      html += `</tr></thead><tbody><tr>`;
+
+      for (let i = 0; i < startDay; i++) {
+        html += `<td class="empty other-month"></td>`;
+      }
+
+      const todayHijri = gregorianToHijri(new Date());
+      for (let day = 1; day <= totalDays; day++) {
+        const isToday = (hYear === todayHijri.year && hMonth === todayHijri.month && day === todayHijri.day);
+        html += `<td class="${isToday ? 'today' : ''}" onclick="selectHijriDate(${hYear}, ${hMonth}, ${day})">${toLatinNumbers(day.toString())}</td>`;
+        if ((startDay + day) % 7 === 0) html += `</tr><tr>`;
+      }
+
+      const remainingCells = (7 - ((startDay + totalDays) % 7)) % 7;
+      for (let i = 0; i < remainingCells; i++) {
+        html += `<td class="empty other-month"></td>`;
+      }
+
+      html += `</tr></tbody></table>`;
+      hijriCalendar.innerHTML = html;
+    }
+
+    function gregorianToHijri(date) {
+      const gregDate = new Date(date);
+      const day = gregDate.getDate();
+      const month = gregDate.getMonth();
+      const year = gregDate.getFullYear();
+      
+      const hijriDate = new Intl.DateTimeFormat('ar-TN-u-ca-islamic', {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric'
+      }).format(gregDate);
+      
+      const parts = hijriDate.split('/');
+      return {
+        day: parseInt(parts[0]),
+        month: parseInt(parts[1]) - 1,
+        year: parseInt(parts[2])
+      };
+    }
+
+    function hijriToGregorian(hYear, hMonth, hDay) {
+      const approxGregorianYear = hYear + 579;
+      const hijriDate = new Date(approxGregorianYear, hMonth, hDay);
+      
+      const adjustment = Math.floor(hYear * 0.03);
+      hijriDate.setDate(hijriDate.getDate() - adjustment);
+      
+      return hijriDate;
+    }
+
+    function prevMonth(event) {
+      event.stopPropagation();
+      if (currentCalendarType === 'gregorian') {
+        currentGregorianDate.setMonth(currentGregorianDate.getMonth() - 1);
+        renderGregorianCalendar(currentGregorianDate);
+      } else {
+        currentHijriDate.setMonth(currentHijriDate.getMonth() - 1);
+        renderHijriCalendar(currentHijriDate);
+      }
+    }
+
+    function nextMonth(event) {
+      event.stopPropagation();
+      if (currentCalendarType === 'gregorian') {
+        currentGregorianDate.setMonth(currentGregorianDate.getMonth() + 1);
+        renderGregorianCalendar(currentGregorianDate);
+      } else {
+        currentHijriDate.setMonth(currentHijriDate.getMonth() + 1);
+        renderHijriCalendar(currentHijriDate);
+      }
+    }
+
+    function selectGregorianDate(year, month, day) {
+      const selected = new Date(year, month, day);
+      const hijri = toLatinNumbers(new Intl.DateTimeFormat('ar-TN-u-ca-islamic', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      }).format(selected));
+      info.textContent = `📌 التاريخ المحدد: ${toLatinNumbers(selected.toLocaleDateString('ar-EG'))} • 🕌 ${hijri}`;
+    }
+
+    function selectHijriDate(year, month, day) {
+      const hijriDateStr = new Intl.DateTimeFormat('ar-TN-u-ca-islamic', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      }).format(hijriToGregorian(year, month, day));
+      info.textContent = `📌 التاريخ الهجري: ${toLatinNumbers(hijriDateStr)}`;
+    }
+
+    scaleRange.addEventListener("input", () => {
+      const scale = scaleRange.value;
+      const panel = document.getElementById("mainPanel");
+      panel.style.transform = `scale(${scale / 100})`;
+      info.style.marginTop = `${(scale - 100) * 0.4}px`;
+      saveSettings();
+    });
+
+    backgroundSelect.addEventListener("change", () => {
+      const value = backgroundSelect.value;
+      
+      customBgContainer.style.display = "none";
+      bgImageContainer.style.display = "none";
+      
+      if (value === "dark") {
+        document.body.classList.remove("light-theme");
+        document.body.style.background = "#1e1e2f";
+        document.body.style.backgroundImage = "none";
+      } else if (value === "light") {
+        document.body.classList.add("light-theme");
+        document.body.style.background = "#f0f0f0";
+        document.body.style.backgroundImage = "none";
+      } else if (value === "custom") {
+        document.body.classList.remove("light-theme");
+        customBgContainer.style.display = "block";
+        document.body.style.backgroundImage = "none";
+      } else if (value === "image") {
+        document.body.classList.remove("light-theme");
+        bgImageContainer.style.display = "block";
+      }
+      saveSettings();
+    });
+
+    customBackground.addEventListener("input", () => {
+      document.body.style.background = customBackground.value;
+      saveSettings();
+    });
+
+    backgroundImage.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          document.body.style.backgroundImage = `url('${reader.result}')`;
+          document.body.style.backgroundSize = 'cover';
+          saveSettings();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    fontSelect.addEventListener("change", () => {
+      document.body.style.fontFamily = fontSelect.value;
+      saveSettings();
+    });
+
+    timeFormat.addEventListener("change", () => {
+      saveSettings();
+    });
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        document.querySelector(".button-panel").style.display = "none";
+        settingsPanel.style.display = 'none';
+        calendarPopup.style.display = 'none';
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    document.addEventListener("fullscreenchange", () => {
+      const panel = document.querySelector(".button-panel");
+      if (!document.fullscreenElement) {
+        panel.style.display = "flex";
+      }
+    });
+
+    document.addEventListener("click", function (event) {
+      if (!settingsPanel.contains(event.target) && !calendarPopup.contains(event.target) && !event.target.closest(".button-panel")) {
+        settingsPanel.style.display = 'none';
+        calendarPopup.style.display = 'none';
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadSettings(); // تحميل الإعدادات المحفوظة
+      
+      if (document.fullscreenElement || window.innerHeight === screen.height) {
+        document.querySelector(".button-panel").style.display = "none";
+      }
+      renderGregorianCalendar(currentGregorianDate);
+    });
+  </script>
+</body>
+</html>
